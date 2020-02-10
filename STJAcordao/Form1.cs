@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using AutoUpdaterDotNET;
 
 namespace STJAcordao
 {
@@ -29,7 +30,7 @@ namespace STJAcordao
         public Form1()
         {
             InitializeComponent();
-
+            AutoUpdater.Start("https://lucasvor.github.io/STJ-Acordao/Files/autoUpdate.xml");
 
             tpb = new TextProgressBar();
             tpb.Dock = DockStyle.Fill;
