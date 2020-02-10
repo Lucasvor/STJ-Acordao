@@ -29,6 +29,8 @@ namespace STJAcordao
         public Form1()
         {
             InitializeComponent();
+
+
             tpb = new TextProgressBar();
             tpb.Dock = DockStyle.Fill;
             tpb.VisualMode = ProgressBarDisplayMode.TextAndPercentage;
