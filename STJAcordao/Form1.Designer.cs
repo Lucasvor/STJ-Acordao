@@ -110,7 +110,7 @@
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Text = "STJ - Acórdãos";
+            this.Text = "STJ - Acórdãos v1";
             this.ResumeLayout(false);
             this.PerformLayout();
 
