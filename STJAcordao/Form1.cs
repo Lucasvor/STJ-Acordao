@@ -31,9 +31,9 @@ namespace STJAcordao
         {
             InitializeComponent();
             var currentDirectory = new DirectoryInfo(Environment.CurrentDirectory);
-            if(currentDirectory.Parent != null)
+            if(currentDirectory != null)
             {
-                AutoUpdater.InstallationPath = currentDirectory.Parent.FullName;
+                AutoUpdater.InstallationPath = currentDirectory.FullName;
             }
             AutoUpdater.Start("https://lucasvor.github.io/STJ-Acordao/Files/autoUpdate.xml");
 
