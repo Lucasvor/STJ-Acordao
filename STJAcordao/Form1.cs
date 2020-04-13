@@ -211,48 +211,55 @@ namespace STJAcordao
                              //            updateLabel(label3, "✅");
                              //            buscaCDE = false;
                              //        }
-                                     
+
                              //    }
                              //}
-                             if (pos1EtapaBusca != null)
+                             try
                              {
-                                 if (string.IsNullOrWhiteSpace(secondStepETB.Text))
+                                 if (pos1EtapaBusca != null)
                                  {
-                                     textBusca2 = resultado.Item2;
+                                     if (string.IsNullOrWhiteSpace(secondStepETB.Text))
+                                     {
+                                         textBusca2 = resultado.Item2;
+                                     }
+                                     else
+                                     {
+                                         textBusca2 = secondStepETB.Text;
+                                     }
+                                     var result2 = pages.FindText(textBusca2).Finds;
+                                     if (result2.Length > 0)
+                                     {
+                                         pos2EtapaBusca = i;
+                                         updateLabel(label1, "✅");
+                                         //MessageBox.Show("Achei segunda parte");
+                                         fim = true;
+                                     }
                                  }
-                                 else
+                                 if (pos1EtapaBusca == null)
                                  {
-                                     textBusca2 = secondStepETB.Text;
-                                 }
-                                 var result2 = pages.FindText(textBusca2).Finds;
-                                 if (result2.Length > 0)
-                                 {
-                                     pos2EtapaBusca = i;
-                                     updateLabel(label1, "✅");
-                                     //MessageBox.Show("Achei segunda parte");
-                                     fim = true;
+                                     if (string.IsNullOrWhiteSpace(firstStepETB.Text))
+                                     {
+                                         textBusca1 = resultado.Item1;
+                                     }
+                                     else
+                                     {
+                                         textBusca1 = firstStepETB.Text;
+                                     }
+
+                                     var result = pages.FindText(textBusca1).Finds;
+
+                                     if (result.Length > 0)
+                                     {
+                                         pos1EtapaBusca = i;
+                                         updateLabel(label2, "✅");
+                                         //label2.Text += "✅";
+                                         //MessageBox.Show("Achei primeira parte");
+                                     }
                                  }
                              }
-                             if (pos1EtapaBusca == null)
+                             catch (FormatException)
                              {
-                                 if (string.IsNullOrWhiteSpace(firstStepETB.Text))
-                                 {
-                                     textBusca1 = resultado.Item1;
-                                 }
-                                 else
-                                 {
-                                     textBusca1 = firstStepETB.Text;
-                                 }
-
-                                 var result = pages.FindText(textBusca1).Finds;
-
-                                 if (result.Length > 0)
-                                 {
-                                     pos1EtapaBusca = i;
-                                     updateLabel(label2, "✅");
-                                     //label2.Text += "✅";
-                                     //MessageBox.Show("Achei primeira parte");
-                                 }
+                                 MessageBox.Show($"Caracteres inválidos no arquivo: {pdfMerges[i]}\nPulando Arquivo.");
                              }
                              break;
                          }
