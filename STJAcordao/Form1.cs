@@ -31,7 +31,7 @@ namespace STJAcordao
         {
             InitializeComponent();
             var currentDirectory = new DirectoryInfo(Environment.CurrentDirectory);
-            if(currentDirectory != null)
+            if (currentDirectory != null)
             {
                 AutoUpdater.InstallationPath = currentDirectory.FullName;
             }
@@ -43,28 +43,30 @@ namespace STJAcordao
             tpb.CustomText = "Informe a data";
             panel1.Controls.Add(tpb);
 
-            firstStepETB = new ExTextBox();
-            firstStepETB.Dock = DockStyle.Fill;
-            firstStepETB.Hint = "Primeira parte";
-            secondStepETB = new ExTextBox();
-            secondStepETB.Dock = DockStyle.Fill;
-            secondStepETB.Hint = "Segunda parte";
-            tableLayoutPanel1.Controls.Add(firstStepETB, 0, 0);
-            tableLayoutPanel1.Controls.Add(secondStepETB, 1, 0);
+            //firstStepETB = new ExTextBox();
+            //firstStepETB.Dock = DockStyle.Fill;
+            //firstStepETB.Hint = "Primeira parte";
+            //secondStepETB = new ExTextBox();
+            //secondStepETB.Dock = DockStyle.Fill;
+            //secondStepETB.Hint = "Segunda parte";
+            //tableLayoutPanel1.Controls.Add(firstStepETB, 0, 0);
+            //tableLayoutPanel1.Controls.Add(secondStepETB, 1, 0);
 
         }
 
         private async void button1_Click(object sender, EventArgs e)
         {
             button1.Enabled = false;
-            Tuple<string, string> resultado = default;
+            
+            List<string> rr = default;
             try
             {
                 DiarioDisponivel = null;
                 label1.ForeColor = Color.Black;
                 label2.ForeColor = Color.Black;
-                resultado = await GetSiteSTJ(dateTimePicker1.Value);
-                if (resultado == null)
+                rr = await GetSiteSTJNum(dateTimePicker1.Value);
+                
+                if (rr == null)
                 {
                     throw new Exception("Não existem ocorrências nesse dia.");
                 }
@@ -72,8 +74,8 @@ namespace STJAcordao
                 {
                     throw new Exception("Não foi possivel pegar a data do diário.");
                 }
-                
-                
+
+
 
                 var DiarioDt = DateTime.ParseExact(DiarioDisponivel, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture);
                 if (!File.Exists($"stj_dje_{ DiarioDt.ToString("yyyyMMdd")}.zip"))
@@ -113,176 +115,23 @@ namespace STJAcordao
                      // Merge PDF
                      updateProgressBar(tpb, 0, "Processo de Merge Iniciado");
                      var pdfMerges = new List<string>();
-                     var pdfs = new List<PdfDocument>();
                      var files = new DirectoryInfo("PDF").EnumerateFiles();
-                     var totalFiles = files.Count();
                      int iMerge = default;
-                     int? pos1EtapaBusca = null;
-                     int? pos2EtapaBusca = null;
-                     bool fim = false;
-                     string textBusca1 = default;
-                     string textBusca2 = default;
 
-                     foreach (var file in files)
+                     var intersect = files.ToList().Where(x => rr.Contains(Path.GetFileNameWithoutExtension(x.FullName).Split('_')[4]));
+
+                     foreach(var file in intersect)
                      {
                          pdfMerges.Add(file.FullName);
-                         pdfs.Add(new PdfDocument(file.FullName));
-                         updateProgressBar(tpb, Convert.ToInt32(iMerge++ / (0.01 * totalFiles)), $"Jutando as informações {file.Name}");
-                         //
+                         updateProgressBar(tpb, Convert.ToInt32(iMerge++ / (0.01 * intersect.Count())), $"Jutando as informações {file.Name}");
                      }
-                     updateProgressBar(tpb, 0, $"Iniciando processo de busca");
-                     for (int i = 0; i < pdfs.Count; i++)  //foreach(var pdf in pdfs)
-                     {
-                         if (fim)
-                             break;
-
-                         foreach (PdfPageBase pages in pdfs[i].Pages)
-                         {
-                             // trocar para extract text por causa do findtext não consegue fazer mais de uma vez.
-                             //var text = pages.ExtractText();
-                             //if (buscaCDE)
-                             //{
-                             //    if (text.Contains(resultado.Item3) && pos1EtapaBuscaCDE == null)
-                             //    {
-                             //        pos1EtapaBuscaCDE = i;
-                             //        updateLabel(label3, "✅");
-                             //    }
-                             //    else if (text.Contains(resultado.Item4) && pos1EtapaBuscaCDE != null)
-                             //    {
-                             //        pos2EtapaBuscaCDE = i;
-                             //        updateLabel(label3, "✅");
-                             //    }
-                             //    buscaCDE = false;
-
-                             //}
-                             //if (pos1EtapaBusca != null)
-                             //{
-                             //    if (string.IsNullOrWhiteSpace(secondStepETB.Text))
-                             //    {
-                             //        textBusca2 = resultado.Item2;
-                             //    }
-                             //    else
-                             //    {
-                             //        textBusca2 = secondStepETB.Text;
-                             //    }
-                             //    if (text.Contains(textBusca2))
-                             //    {
-                             //        pos2EtapaBusca = i;
-                             //        updateLabel(label1, "✅");
-                             //        //MessageBox.Show("Achei segunda parte");
-                             //        fim = true;
-                             //    }
-                             //}
-                             //if (pos1EtapaBusca == null)
-                             //{
-                             //    if (string.IsNullOrWhiteSpace(firstStepETB.Text))
-                             //    {
-                             //        textBusca1 = resultado.Item1;
-                             //    }
-                             //    else
-                             //    {
-                             //        textBusca1 = firstStepETB.Text;
-                             //    }
-
-                             //    if (text.Contains(textBusca1))
-                             //    {
-                             //        pos1EtapaBusca = i;
-                             //        updateLabel(label2, "✅");
-                             //    }
-                             //}
-                             //Versão antiga utilizando FINdTEXT
-                             //if (!string.IsNullOrWhiteSpace(resultado.Item3) && buscaCDE)
-                             //{
-                             //    if (pos1EtapaBuscaCDE == null)
-                             //    {
-                             //        var result = pages.FindText(resultado.Item3,Spire.Pdf.General.Find.TextFindParameter.None).Finds;
-                             //        if (result.Length > 0)
-                             //        {
-                             //            pos1EtapaBuscaCDE = i;
-                             //            updateLabel(label3, "✅");
-                             //        }
-                             //    }
-                             //    if (pos1EtapaBuscaCDE != null)
-                             //    {
-                             //        var result = pages.FindText(resultado.Item4, Spire.Pdf.General.Find.TextFindParameter.None).Finds;
-                             //        if (result.Length > 0)
-                             //        {
-                             //            pos2EtapaBuscaCDE = i;
-                             //            updateLabel(label3, "✅");
-                             //            buscaCDE = false;
-                             //        }
-
-                             //    }
-                             //}
-                             try
-                             {
-                                 if (pos1EtapaBusca != null)
-                                 {
-                                     if (string.IsNullOrWhiteSpace(secondStepETB.Text))
-                                     {
-                                         textBusca2 = resultado.Item2;
-                                     }
-                                     else
-                                     {
-                                         textBusca2 = secondStepETB.Text;
-                                     }
-                                     var result2 = pages.FindText(textBusca2).Finds;
-                                     if (result2.Length > 0)
-                                     {
-                                         pos2EtapaBusca = i;
-                                         updateLabel(label1, "✅");
-                                         //MessageBox.Show("Achei segunda parte");
-                                         fim = true;
-                                     }
-                                 }
-                                 if (pos1EtapaBusca == null)
-                                 {
-                                     if (string.IsNullOrWhiteSpace(firstStepETB.Text))
-                                     {
-                                         textBusca1 = resultado.Item1;
-                                     }
-                                     else
-                                     {
-                                         textBusca1 = firstStepETB.Text;
-                                     }
-
-                                     var result = pages.FindText(textBusca1).Finds;
-
-                                     if (result.Length > 0)
-                                     {
-                                         pos1EtapaBusca = i;
-                                         updateLabel(label2, "✅");
-                                         //label2.Text += "✅";
-                                         //MessageBox.Show("Achei primeira parte");
-                                     }
-                                 }
-                             }
-                             catch (FormatException)
-                             {
-                                 MessageBox.Show($"Caracteres inválidos no arquivo: {pdfMerges[i]}\nPulando Arquivo.");
-                             }
-                             break;
-                         }
-                         updateProgressBar(tpb, Convert.ToInt32(i / (0.01 * totalFiles)), $"Buscando informações no arquivo: {i}/{totalFiles}");
-                         // verificar se sempre é a primeira página que contém o texto.
-                     }
-                     if (pos2EtapaBusca == null || pos1EtapaBusca == null)
-                     {
-                         throw new Exception("Não foi possível localizar as duas palavras-chaves, tente novamente!");
-                     }
-                     var pdfMergesArray = pdfMerges.ToArray();
-                     var array = pdfMergesArray.SubArray(pos1EtapaBusca.GetValueOrDefault(), (pos2EtapaBusca.GetValueOrDefault() - pos1EtapaBusca.GetValueOrDefault()) + 1);
-                     
-                     //Array.Copy(arrayCDE, arrayMerge, arrayCDE.Length);
-                     //Array.Copy(array, 0, arrayMerge, arrayCDE.Length, array.Length);
-
                      updateProgressBar(tpb, 0, $"Processando...");
-                     using (PdfDocumentBase doc = PdfDocument.MergeFiles(array))
+                     using (PdfDocumentBase doc = PdfDocument.MergeFiles(pdfMerges.ToArray()))
                      {
                          updateProgressBar(tpb, 0, "Salvando Arquivo.");
                          doc.Save("mergepdf.pdf", FileFormat.PDF);
                          MessageBox.Show("Arquivo salvo com sucesso!");
-                         updateProgressBar(tpb, 100, "Salvando Arquivo.");
+                         updateProgressBar(tpb, 100, "Arquivo Salvo");
                      }
                  }).ConfigureAwait(false);
             }
@@ -355,7 +204,7 @@ namespace STJAcordao
                     {
                         label.Text += value;
                     }
-                    
+
                 }));
             else
             {
@@ -375,6 +224,130 @@ namespace STJAcordao
             tpb.CustomText = "Baixando arquivo";
             tpb.Value = e.ProgressPercentage;
         }
+        private async Task<List<string>> GetSiteSTJNum(DateTime date)
+        {
+            List<string> Ids = new List<string>();
+            List<string> acordaos = new List<string>(); // pra att futuras.
+            var values = new Dictionary<string, string>
+            {
+                {"aplicacao","dj.resultados"},
+                {"data_pesquisa_texto", date.ToString("dd/MM/yyyy")},
+                {"sel_tipo_pesquisa","tipo_documento"},
+                {"parametro_tela",null},
+                {"parametro","5"},
+                {"desc_parametro","EMENTA / ACORDÃO"},
+                {"tipo_operacao_fonetica","C"},
+                {"nu_pagina_atual","0"},
+                {"proximo","TRUE"},
+                {"tipo_pesquisa","tipo_documento" },
+                {"data_pesquisa", date.ToString("dd/MM/yyyy")},
+                {"data_pesquisa_01",date.ToString("dd/MM/yyyy")},
+                {"data_pesquisa_fim",null},
+                {"padrao_data","padrao_data_publicacao"},
+                {"padrao_tela_documentos","padrao_tela_documentos_1_1"}
+            };
+            using (var client = new HttpClient())
+            {
+                var response = await client.PostAsync("https://ww2.stj.jus.br/processo/dj/consulta/documento/tipo", new FormUrlEncodedContent(values));
+
+                var getString = await response.Content.ReadAsStringAsync();
+
+                var doc = new HtmlAgilityPack.HtmlDocument();
+                if (getString.Contains("Sem ocorr&ecirc;ncias."))
+                {
+                    return null;
+                }
+                doc.LoadHtml(getString);
+
+                var nodes = doc.DocumentNode.SelectNodes("//div");
+                DiarioDisponivel = doc.DocumentNode.SelectNodes(@"/html/body/div[2]/div[6]/div/div/div[3]/div[2]/div/div/div/form/div[1]/div/span[1]/div[2]/b")[0].InnerText;
+
+                foreach (var nos in nodes)
+                {
+                    if (nos.Id.Contains("node"))
+                    {
+                        foreach (var childNos in nos.ChildNodes)
+                        {
+                            if (childNos.Attributes.Count > 0)
+                                if (childNos.Attributes[0].Name.Equals("class") && childNos.Attributes[0].Value.Equals("clsDjArvoreSubCapituloTexto"))
+                                {
+                                    
+                                    if (childNos.InnerText == "Sexta Turma" || childNos.InnerText == "Quinta Turma")
+                                    {
+                                        label3.Text = $"Informações: Quantidade de Acórdãos {Ids.Count} | Ultima Turma: {acordaos[acordaos.Count - 1]}";
+                                        return Ids;
+                                    }
+                                    acordaos.Add(childNos.InnerText);
+                                    //break;
+                                }
+                        }
+                    }
+
+                    if (nos.ChildNodes.Count > 3)
+                    {
+                        foreach (var childNos in nos.ChildNodes)
+                        {
+                            if (childNos.ChildNodes.Count > 3)
+                            {
+                                foreach (var childchildNos in childNos.ChildNodes)
+                                {
+                                    if (childchildNos.Id.Contains("idDjArvoreDocumentoLinkImagem"))
+                                    {
+
+                                        var getId = childchildNos.LastChild.Id;
+                                        var trataId = getId.Split('_');
+                                        if (trataId.Length == 4)
+                                        {
+                                            if (Ids.Count == 0)
+                                            {
+
+                                                label2.Text = $"Primeira Parte: {childchildNos.InnerText.Replace("&#8209;", "-")}";
+                                            }
+
+                                            Ids.Add(trataId[2]);
+                                            label1.Text = $"Segunda Parte: {childchildNos.InnerText.Replace("&#8209;", "-")}";
+                                        }
+                                        else
+                                        {
+                                            throw new Exception("Erro ao pegar id do arquivo.");
+                                        }
+                                        ///
+                                        //var id = childchildNos.InnerHtml;
+                                        //Regex regex = new Regex(@"\('\d{8}',");
+                                        //Match match = regex.Match(id);
+                                        //if (match.Success)
+                                        //{
+                                        //}
+
+                                    }
+                                    //if (childchildNos.Id.Contains("node"))
+                                    //{
+                                    //    foreach(var childNosAcordao in childchildNos.ChildNodes)
+                                    //    {
+                                    //        if(childNosAcordao.Attributes.Count > 0)
+                                    //        if(childNosAcordao.Attributes[0].Name.Equals("class") && childNosAcordao.Attributes[0].Value.Equals("clsDjArvoreSubCapituloTexto"))
+                                    //        {
+                                    //            acordaos.Add(childNosAcordao.InnerText);
+                                    //                break;
+                                    //        }
+                                    //    }
+                                    //}
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+            label3.Text = $"Informações: Quantidade de Acórdãos {Ids.Count} | Ultima Turma: {acordaos[acordaos.Count -1]}";
+            if(Ids.Count > 0)
+            {
+                return Ids;
+            }
+            return null;
+        }
+
+
         private async Task<Tuple<string, string>> GetSiteSTJ(DateTime date)
         {
             Tuple<string, string> result = default;
@@ -447,7 +420,7 @@ namespace STJAcordao
                     primeiraParte = nodes[i + 4].InnerText.Replace("  ", "").Replace("\n", "").Trim();
                     primeiro = false;
                 }
-                if(nodes[i].InnerText.Equals("Primeira Turma"))
+                if (nodes[i].InnerText.Equals("Primeira Turma"))
                 {
                     ultimaParte = nodes[i - 3].InnerText.Replace("  ", "").Replace("\n", "").Trim();
                 }
@@ -473,7 +446,7 @@ namespace STJAcordao
                     nTeveQuintaTurma = true;
                     ultimaParte = nodes[i - 3].InnerText.Replace("  ", "").Replace("\n", "").Trim();
                 }
-                if(!primeiro && nodes[i].InnerText.Contains("Di&aacute;rio publicado em") && !onlyQuartaTurma && !nTeveQuintaTurma)
+                if (!primeiro && nodes[i].InnerText.Contains("Di&aacute;rio publicado em") && !onlyQuartaTurma && !nTeveQuintaTurma)
                 {
                     onlyQuartaTurma = true;
                     ultimaParte = nodes[i - 2].InnerText.Replace("  ", "").Replace("\n", "").Trim();
@@ -501,7 +474,7 @@ namespace STJAcordao
                 label1.Text = $"Segunda Parte: {ultimaParte}";
                 label2.Text = $"Primeira Parte: {primeiraParte}";
 
-                result = new Tuple<string, string>(matchPrimeiraParte.Value.Replace("(", "").Replace(")", "").Replace("&#8209;","-"), matchUltimaParte.Value.Replace("(", "").Replace(")", "").Replace("&#8209;", "-"));
+                result = new Tuple<string, string>(matchPrimeiraParte.Value.Replace("(", "").Replace(")", "").Replace("&#8209;", "-"), matchUltimaParte.Value.Replace("(", "").Replace(")", "").Replace("&#8209;", "-"));
 
             }
             else
