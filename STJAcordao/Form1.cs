@@ -14,12 +14,15 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CefSharp.WinForms;
 using AutoUpdaterDotNET;
 
 namespace STJAcordao
 {
     public partial class Form1 : Form
     {
+        string resultTj;
+        ChromiumWebBrowser browser;
         TextProgressBar tpb;
         ExTextBox firstStepETB;
         ExTextBox secondStepETB;
@@ -52,6 +55,10 @@ namespace STJAcordao
             tableLayoutPanel1.Controls.Add(firstStepETB, 0, 0);
             tableLayoutPanel1.Controls.Add(secondStepETB, 1, 0);
 
+
+            browser = new ChromiumWebBrowser("https://processo.stj.jus.br/processo/dj/init");
+            browser.FrameLoadEnd += Browser_FrameLoadEnd;
+            panel2.Controls.Add(browser);
         }
 
         private async void button1_Click(object sender, EventArgs e)
@@ -63,6 +70,9 @@ namespace STJAcordao
                 DiarioDisponivel = null;
                 label1.ForeColor = Color.Black;
                 label2.ForeColor = Color.Black;
+
+                
+
                 resultado = await GetSiteSTJ(dateTimePicker1.Value);
                 if (resultado == null)
                 {
@@ -396,8 +406,14 @@ namespace STJAcordao
                 {"padrao_data","padrao_data_publicacao"},
                 {"padrao_tela_documentos","padrao_tela_documentos_1_1"}
             };
+            
+
+            
+
             HttpClient client = new HttpClient();
             var response = await client.PostAsync("https://ww2.stj.jus.br/processo/dj/consulta/documento/tipo", new FormUrlEncodedContent(values));
+
+
             var getString = await response.Content.ReadAsStringAsync();
 
             var doc = new HtmlAgilityPack.HtmlDocument();
@@ -509,6 +525,30 @@ namespace STJAcordao
             }
 
             return result;
+        }
+
+        private async void Browser_FrameLoadEnd(object sender, CefSharp.FrameLoadEndEventArgs e)
+        {
+            string result;
+            if (e.Frame.IsMain)
+            {
+                var identifiers = browser.GetBrowser().GetFrameIdentifiers();
+                foreach(var i in identifiers)
+                {
+                    var test = browser.GetBrowser().GetFrame(i);
+                    if (test != null)
+                    {
+                        if (test.IsValid)
+                        {
+                            result = await test?.GetSourceAsync();
+                            if (result.Contains("Acórdãos"))
+                            {
+                                resultTj = result;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
