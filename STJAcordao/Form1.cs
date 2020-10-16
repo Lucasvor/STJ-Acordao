@@ -398,7 +398,6 @@ namespace STJAcordao
             };
             HttpClient client = new HttpClient();
             var response = await client.PostAsync("https://ww2.stj.jus.br/processo/dj/consulta/documento/tipo", new FormUrlEncodedContent(values));
-
             var getString = await response.Content.ReadAsStringAsync();
 
             var doc = new HtmlAgilityPack.HtmlDocument();
