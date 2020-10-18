@@ -15,14 +15,15 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using AutoUpdaterDotNET;
+using CefSharp.WinForms;
 
 namespace STJAcordao
 {
     public partial class Form1 : Form
     {
         TextProgressBar tpb;
-        ExTextBox firstStepETB;
-        ExTextBox secondStepETB;
+        ChromiumWebBrowser browser;
+        string resultTj;
         static string DiarioDisponivel;
         int totalZip;
         int iZip;
@@ -52,6 +53,9 @@ namespace STJAcordao
             //tableLayoutPanel1.Controls.Add(firstStepETB, 0, 0);
             //tableLayoutPanel1.Controls.Add(secondStepETB, 1, 0);
 
+            browser = new ChromiumWebBrowser("https://processo.stj.jus.br/processo/dj/init");
+            browser.FrameLoadEnd += Browser_FrameLoadEnd;
+            panel3.Controls.Add(browser);
         }
 
         private async void button1_Click(object sender, EventArgs e)
@@ -64,7 +68,8 @@ namespace STJAcordao
                 DiarioDisponivel = null;
                 label1.ForeColor = Color.Black;
                 label2.ForeColor = Color.Black;
-                rr = await GetSiteSTJNum(dateTimePicker1.Value);
+                //rr = await GetSiteSTJNum(dateTimePicker1.Value);
+                rr = await GetSiteSTJNumCaptcha();
                 
                 if (rr == null)
                 {
@@ -85,10 +90,6 @@ namespace STJAcordao
                         wc.DownloadProgressChanged += Wc_DownloadProgressChanged;
                         await wc.DownloadFileTaskAsync(new Uri($"https://ww2.stj.jus.br/docs_internet/processo/dje/zip/stj_dje_{DiarioDt.ToString("yyyyMMdd")}.zip"), $"stj_dje_{DiarioDt.ToString("yyyyMMdd")}.zip");
 
-                    }
-                    if (firstStepETB.Text == null || secondStepETB.Text == null)
-                    {
-                        throw new Exception("Campos de pesquisa não podem ser vazios.");
                     }
                 }
 
@@ -224,6 +225,88 @@ namespace STJAcordao
             tpb.CustomText = "Baixando arquivo";
             tpb.Value = e.ProgressPercentage;
         }
+        private async Task<List<string>> GetSiteSTJNumCaptcha()
+        {
+            List<string> Ids = new List<string>();
+            List<string> acordaos = new List<string>();
+
+            if (string.IsNullOrEmpty(resultTj))
+            {
+                throw new Exception("Não foi possivel localizar os arquivos.");
+            }
+            var doc = new HtmlAgilityPack.HtmlDocument();
+            if (resultTj.Contains("Sem ocorrências."))
+            {
+                return null;
+            }
+            doc.LoadHtml(resultTj);
+            var nodes = doc.DocumentNode.SelectNodes("//div");
+            DiarioDisponivel = doc.DocumentNode.SelectNodes(@"/html/body/div[2]/div[6]/div/div/div[3]/div[2]/div/div/div/form/div[1]/div/span[1]/div[2]/b")[0].InnerText;
+
+            foreach (var nos in nodes)
+            {
+                if (nos.Id.Contains("node"))
+                {
+                    foreach (var childNos in nos.ChildNodes)
+                    {
+                        if (childNos.Attributes.Count > 0)
+                            if (childNos.Attributes[0].Name.Equals("class") && childNos.Attributes[0].Value.Equals("clsDjArvoreSubCapituloTexto"))
+                            {
+
+                                if (childNos.InnerText == "Sexta Turma" || childNos.InnerText == "Quinta Turma")
+                                {
+                                    label3.Text = $"Informações: Quantidade de Acórdãos {Ids.Count} | Ultima Turma: {acordaos[acordaos.Count - 1]}";
+                                    return Ids;
+                                }
+                                acordaos.Add(childNos.InnerText);
+                                //break;
+                            }
+                    }
+                }
+
+                if (nos.ChildNodes.Count > 3)
+                {
+                    foreach (var childNos in nos.ChildNodes)
+                    {
+                        if (childNos.ChildNodes.Count > 3)
+                        {
+                            foreach (var childchildNos in childNos.ChildNodes)
+                            {
+                                if (childchildNos.Id.Contains("idDjArvoreDocumentoLinkImagem"))
+                                {
+
+                                    var getId = childchildNos.LastChild.Id;
+                                    var trataId = getId.Split('_');
+                                    if (trataId.Length == 4)
+                                    {
+                                        if (Ids.Count == 0)
+                                        {
+
+                                            label2.Text = $"Primeira Parte: {childchildNos.InnerText.Replace("&#8209;", "-")}";
+                                        }
+
+                                        Ids.Add(trataId[2]);
+                                        label1.Text = $"Segunda Parte: {childchildNos.InnerText.Replace("&#8209;", "-")}";
+                                    }
+                                    else
+                                    {
+                                        throw new Exception("Erro ao pegar id do arquivo.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            label3.Text = $"Informações: Quantidade de Acórdãos {Ids.Count} | Ultima Turma: {acordaos[acordaos.Count - 1]}";
+            if (Ids.Count > 0)
+            {
+                return Ids;
+            }
+            return null;
+
+        }
+
         private async Task<List<string>> GetSiteSTJNum(DateTime date)
         {
             List<string> Ids = new List<string>();
@@ -483,6 +566,31 @@ namespace STJAcordao
             }
 
             return result;
+        }
+
+
+        private async void Browser_FrameLoadEnd(object sender, CefSharp.FrameLoadEndEventArgs e)
+        {
+            string result;
+            if (e.Frame.IsMain)
+            {
+                var identifiers = browser.GetBrowser().GetFrameIdentifiers();
+                foreach (var i in identifiers)
+                {
+                    var test = browser.GetBrowser().GetFrame(i);
+                    if (test != null)
+                    {
+                        if (test.IsValid)
+                        {
+                            result = await test?.GetSourceAsync();
+                            if (result.Contains("Acórdãos"))
+                            {
+                                resultTj = result;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
