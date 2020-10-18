@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <item>
-    <version>3.0.0.0</version>
-    <url>https://github.com/Lucasvor/STJ-Acordao/releases/download/3.0/STJAcordao.zip</url>
+    <version>4.0.0.0</version>
+    <url>https://github.com/Lucasvor/STJ-Acordao/releases/download/4.0/STJAcordao.zip</url>
     <changelog>https://github.com/Lucasvor/STJ-Acordao/releases</changelog>
     <mandatory>false</mandatory>
 </item>
